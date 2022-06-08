@@ -1,3 +1,4 @@
+from faulthandler import disable
 import pandas as pd #Para ler arquivos e transformar em dataframes
 from selenium import webdriver #O navegador - antigo
 from webdriver_manager.chrome import ChromeDriverManager #O navegador -novo
@@ -25,6 +26,7 @@ chromedrive_path = ''
 chrome = ''
 df = '' #dataframe que sera utilizado quando importar a planilha
 nome_do_arquivo = ''
+stop = ''
 
 def iniciar_driver():
     global chromedrive_path
@@ -57,12 +59,12 @@ def logar():
         time.sleep(1)
         chrome.switch_to.default_content()
         try:
-            elemento_botao_login = WebDriverWait(chrome, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="btnLogin"]')))
+            elemento_botao_login = WebDriverWait(chrome, 2).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="btnLogin"]')))
             elemento_botao_login.click()
             time.sleep(1)
             return True
         except TimeoutException:
-            WebDriverWait(chrome, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="menuSuperior"]/ul/li[4]/a')))
+            WebDriverWait(chrome, 2).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="menuSuperior"]/ul/li[4]/a')))
             return True
 
     else:
@@ -93,76 +95,90 @@ def navegar():
 
 
 def lancar_notas():
+    global stop
     statusTotal = len(df.index)
     dir = tela_principal.extrairDir()
+    
+    tela_principal.btParar["state"] = NORMAL
+    tela_principal.btImportarPlan["state"] = DISABLED
+    tela_principal.btBaixar_modelo["state"] = DISABLED
+    tela_principal.btIniciar["state"] = DISABLED
+
     for i, j in df.iterrows():
-
-        t = i + 1
-        msgProgresso = f'Processando registro {t} de {statusTotal}...'
-        tela_principal.lblTotal['text'] = msgProgresso
-
-        if j.Status == 'Processado':
-            continue
+        if stop:
+            parou_processo = 'Você parou o processo. Faltam registros a serem processados, execute novamente o mesmo arquivo!'
+            logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')
+            print(parou_processo, file = logExec)
+            tela_principal.inserirResult(parou_processo)
+            stop = None
+            break
         else:
-            try:
-                #elemento_num_nf = chrome.find_element(By.XPATH, '//*[contains(@title, "Digite ou Utilize")]')
-                try: 
-                    elemento_num_nf = WebDriverWait(chrome, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[contains(@title, "Digite ou Utilize")]')))
-                except: 
-                    navegar()
-                    print("Naveguei de novo!")
-                elemento_num_nf.send_keys(Keys.DELETE)
-                elemento_num_nf.send_keys(Keys.DELETE)
-                elemento_num_nf.send_keys(str(j.Num))
-                #elemento_salva_nf = chrome.find_element(By.XPATH, '//*[@id="btnSalvarNota"]')
-                elemento_salva_nf = WebDriverWait(chrome, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="btnSalvarNota"]')))
-                elemento_salva_nf.click()
-                time.sleep(0.2)
-                time_now_formated_d = tela_principal.consultarDataHora('d')
-                time_now_formated = tela_principal.consultarDataHora('h')
-                logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')           
+            t = i + 1
+            msgProgresso = f'Processando registro {t} de {statusTotal}...'
+            tela_principal.lblTotal['text'] = msgProgresso
+
+            if j.Status == 'Processado':
+                continue
+            else:
                 try:
-                    elemento_sucesso = chrome.find_element(By.XPATH, '//*[@id="lblInfo"]')
-                    if 'registrada com sucesso' in elemento_sucesso.text:
-                        elem_sucess_msg_sucess = time_now_formated + ' | Sucesso! | ' + 'Msg: ' + elemento_sucesso.text + ' | ' + str(j.Num)
-                        print(elem_sucess_msg_sucess, file = logExec)
-                        df.at[i, 'Msg']= elemento_sucesso.text
-                        df.at[i, 'Status']= 'Processado'
-                        tela_principal.inserirResult(elem_sucess_msg_sucess)
-                    else:
-                        elem_sucess_msg_erro = time_now_formated + ' | Erro! | ' + 'Msg: ' + elemento_sucesso.text + ' | ' + str(j.Num) 
-                        print(elem_sucess_msg_erro, file = logExec)
-                        df.at[i, 'Msg']= elemento_sucesso.text
-                        df.at[i, 'Status']= 'Falha'
-                        tela_principal.inserirResult(elem_sucess_msg_erro)
-                except NoSuchElementException:
+                    #elemento_num_nf = chrome.find_element(By.XPATH, '//*[contains(@title, "Digite ou Utilize")]')
+                    try: 
+                        elemento_num_nf = WebDriverWait(chrome, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[contains(@title, "Digite ou Utilize")]')))
+                    except: 
+                        navegar()
+                        print("Naveguei de novo!")
+                    elemento_num_nf.send_keys(Keys.DELETE)
+                    elemento_num_nf.send_keys(Keys.DELETE)
+                    elemento_num_nf.send_keys(str(j.Num))
+                    #elemento_salva_nf = chrome.find_element(By.XPATH, '//*[@id="btnSalvarNota"]')
+                    elemento_salva_nf = WebDriverWait(chrome, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="btnSalvarNota"]')))
+                    elemento_salva_nf.click()
+                    time.sleep(0.2)
+                    time_now_formated_d = tela_principal.consultarDataHora('d')
+                    time_now_formated = tela_principal.consultarDataHora('h')
+                    logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')           
                     try:
-                        #elemento_erro = chrome.find_element(By.XPATH, '//*[@id="lblErro"]')
-                        elemento_erro = WebDriverWait(chrome, 3).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="lblErro"]')))
-                        elemento_erro = chrome.find_element(By.XPATH, '//*[@id="lblErro"]')
-                        elem_erro_msg_erro = time_now_formated + ' | Erro! | ' + 'Msg: ' + elemento_erro.text + ' | ' + str(j.Num)
-                        print(elem_erro_msg_erro, file = logExec)
-                        df.at[i, 'Msg']= elemento_erro.text
-                        df.at[i, 'Status']= 'Falha'
-                        tela_principal.inserirResult(elem_erro_msg_erro)
+                        elemento_sucesso = chrome.find_element(By.XPATH, '//*[@id="lblInfo"]')
+                        if 'registrada com sucesso' in elemento_sucesso.text:
+                            elem_sucess_msg_sucess = time_now_formated + ' | Sucesso! | ' + 'Msg: ' + elemento_sucesso.text + ' | ' + str(j.Num)
+                            print(elem_sucess_msg_sucess, file = logExec)
+                            df.at[i, 'Msg']= elemento_sucesso.text
+                            df.at[i, 'Status']= 'Processado'
+                            tela_principal.inserirResult(elem_sucess_msg_sucess)
+                        else:
+                            elem_sucess_msg_erro = time_now_formated + ' | Erro! | ' + 'Msg: ' + elemento_sucesso.text + ' | ' + str(j.Num) 
+                            print(elem_sucess_msg_erro, file = logExec)
+                            df.at[i, 'Msg']= elemento_sucesso.text
+                            df.at[i, 'Status']= 'Falha'
+                            tela_principal.inserirResult(elem_sucess_msg_erro)
+                    except NoSuchElementException:
+                        try:
+                            #elemento_erro = chrome.find_element(By.XPATH, '//*[@id="lblErro"]')
+                            elemento_erro = WebDriverWait(chrome, 3).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="lblErro"]')))
+                            elemento_erro = chrome.find_element(By.XPATH, '//*[@id="lblErro"]')
+                            elem_erro_msg_erro = time_now_formated + ' | Erro! | ' + 'Msg: ' + elemento_erro.text + ' | ' + str(j.Num)
+                            print(elem_erro_msg_erro, file = logExec)
+                            df.at[i, 'Msg']= elemento_erro.text
+                            df.at[i, 'Status']= 'Falha'
+                            tela_principal.inserirResult(elem_erro_msg_erro)
+                        except:
+                            elem_erro_msg_gen = time_now_formated + ' | Erro! | ' + ' Não foi possível cadastrar, erro não mapeado. | ' + str(j.Num)
+                            print(elem_erro_msg_gen, file = logExec)
+                            df.at[i, 'Msg']= elem_erro_msg_gen
+                            df.at[i, 'Status']= 'Falha'
+                            tela_principal.inserirResult(elem_erro_msg_gen)
                     except:
-                        elem_erro_msg_gen = time_now_formated + ' | Erro! | ' + ' Não foi possível cadastrar, erro não mapeado. | ' + str(j.Num)
-                        print(elem_erro_msg_gen, file = logExec)
-                        df.at[i, 'Msg']= elem_erro_msg_gen
-                        df.at[i, 'Status']= 'Falha'
-                        tela_principal.inserirResult(elem_erro_msg_gen)
+                        print("Registro fica sem tratativa")
                 except:
-                    print("Registro fica sem tratativa")
-            except:
-                exc_type, exc_tb = sys.exc_info()
-                print('DEU ruim!', exc_type, exc_tb.tb_lineno)
-                print('DEU ruim!', exc_type, exc_tb.tb_lineno, file = logExec)
-                tela_principal.inserirResult(f'DEU ruim!, {exc_type}, {exc_tb.tb_lineno}')
-                erro_fora_tela = 'Faltam registros a serem processados, execute novamente o mesmo arquivo!'
-                logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')
-                print(erro_fora_tela, file = logExec)
-                tela_principal.inserirResult(erro_fora_tela)
-                break
+                    exc_type, exc_tb = sys.exc_info()
+                    print('DEU ruim!', exc_type, exc_tb.tb_lineno)
+                    print('DEU ruim!', exc_type, exc_tb.tb_lineno, file = logExec)
+                    tela_principal.inserirResult(f'DEU ruim!, {exc_type}, {exc_tb.tb_lineno}')
+                    erro_fora_tela = 'Faltam registros a serem processados, execute novamente o mesmo arquivo!'
+                    logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')
+                    print(erro_fora_tela, file = logExec)
+                    tela_principal.inserirResult(erro_fora_tela)
+                    break
                 
     time_now_formated_d = tela_principal.consultarDataHora('d')
     try:
@@ -172,6 +188,11 @@ def lancar_notas():
     tela_principal.inserirResult('Fim. Resultados dos processamentos inseridos na planilha em:')
     tela_principal.inserirResult(nome_do_arquivo)
     
+    tela_principal.btParar["state"] = DISABLED
+    tela_principal.btImportarPlan["state"] = NORMAL
+    tela_principal.btBaixar_modelo["state"] = NORMAL
+    tela_principal.btIniciar["state"] = NORMAL
+
     print("Fim!!!!!!!")
     chrome.quit()
 
@@ -280,14 +301,21 @@ class Tela:
         self.menuProjetos["font"] = self.fontePadrao
         self.menuProjetos.pack()
 
-        self.btLogin = Button(self.containerIniciar)
-        self.btLogin["text"] = "Login"
-        self.btLogin["font"] = self.fontePadrao
-        self.btLogin["width"] = 24
-        self.btLogin["command"] = self.iniciar
-        #command=threading.Thread(target=five_seconds).start()
-        self.btLogin["command"] = lambda:threading.Thread(target=self.iniciar).start()
-        self.btLogin.pack()
+        self.btIniciar = Button(self.containerIniciar)
+        self.btIniciar["text"] = "Iniciar"
+        self.btIniciar["font"] = self.fontePadrao
+        self.btIniciar["width"] = 24
+        #self.btIniciar["command"] = self.iniciar
+        self.btIniciar["command"] = lambda:threading.Thread(target=self.iniciar).start()
+        self.btIniciar.pack(side=LEFT)
+
+        self.btParar = Button(self.containerIniciar)
+        self.btParar["text"] = "Parar"
+        self.btParar["font"] = self.fontePadrao
+        self.btParar["width"] = 24
+        self.btParar["command"] = self.parar
+        self.btParar["state"] = DISABLED
+        self.btParar.pack()
 
         self.lblTotal = Label(self.containerTotal, text="Total de registros importados: ", font= ('Arial', '9'))
         self.lblTotal.pack(side = LEFT, expand = NO, fill = NONE )
@@ -457,6 +485,10 @@ class Tela:
                 lancar_notas()
             print("Fim!!!!!!!")
             #chrome.quit()
+    
+    def parar(self):
+        global stop
+        stop = True
 
 
 root = Tk()
