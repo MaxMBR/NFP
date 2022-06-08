@@ -398,7 +398,9 @@ class Tela:
             self.lblTotal['font'] = ("Arial", "9", 'bold')
         
         elif nome_do_arquivo.lower().endswith('.txt'):
-            df = pd.read_table(nome_do_arquivo, delimiter=' ', header=None)
+            df = pd.read_table(nome_do_arquivo, header=None)
+            #df = pd.read_table(nome_do_arquivo, delimiter=' ', header=None)
+            #print(df)
             df.columns = ['Num'] #nomeia a coluna importada
             df['Status'] ='' #cria novas colunas
             df['Msg'] = ''
