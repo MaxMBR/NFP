@@ -20,6 +20,7 @@ from tkinter.ttk import Combobox
 from pathlib import Path
 import sys
 import threading
+import random
 
 
 chromedrive_path = ''
@@ -133,7 +134,9 @@ def lancar_notas():
                     #elemento_salva_nf = chrome.find_element(By.XPATH, '//*[@id="btnSalvarNota"]')
                     elemento_salva_nf = WebDriverWait(chrome, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="btnSalvarNota"]')))
                     elemento_salva_nf.click()
-                    time.sleep(0.2)
+                    aguardar = tela_principal.pegarIntervalo()
+                    time.sleep(aguardar)
+                    #print(aguardar)
                     time_now_formated_d = tela_principal.consultarDataHora('d')
                     time_now_formated = tela_principal.consultarDataHora('h')
                     logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')           
@@ -235,6 +238,10 @@ class Tela:
         self.containerMenuProjeto["pady"] = 10
         self.containerMenuProjeto.pack()
 
+        self.containerRadioBtInterv = Frame(master)
+        self.containerRadioBtInterv["pady"] = 10
+        self.containerRadioBtInterv.pack()
+
         self.containerIniciar = Frame(master)
         self.containerIniciar["pady"] = 10
         self.containerIniciar.pack()
@@ -301,6 +308,19 @@ class Tela:
         self.menuProjetos["font"] = self.fontePadrao
         self.menuProjetos.pack()
 
+        self.lblRadioBtInteval = Label(self.containerRadioBtInterv, text="Selecione o intervalo em segundos de lançamento entre notas:")
+        self.lblRadioBtInteval["font"] = self.fontePadrao
+        self.lblRadioBtInteval.pack()  
+
+        self.varIntervalos = [('Fixo: 0.5s', 0.5), ('Aleatório: entre 1.0 e 3.0s', self.pegarIntervalo)]
+        self.intervaloSelecionado = IntVar()
+        self.intervaloSelecionado.set(0)
+        # Using a loop to create all alternatives in the list:
+        for index, varIntervalos in enumerate(self.varIntervalos):
+            b = Radiobutton(self.containerRadioBtInterv, text=varIntervalos[0], variable=self.intervaloSelecionado,
+                            value=index)
+            b.pack()
+        
         self.btIniciar = Button(self.containerIniciar)
         self.btIniciar["text"] = "Iniciar"
         self.btIniciar["font"] = self.fontePadrao
@@ -316,6 +336,14 @@ class Tela:
         self.btParar["command"] = self.parar
         self.btParar["state"] = DISABLED
         self.btParar.pack()
+
+        self.teste = Button(self.containerIniciar)
+        self.teste["text"] = "teste"
+        self.teste["font"] = self.fontePadrao
+        self.teste["width"] = 24
+        self.teste["command"] = self.pegarIntervalo #alterar para qualquer função
+        self.teste["state"] = NORMAL
+        #self.teste.pack() #botão para testes do código
 
         self.lblTotal = Label(self.containerTotal, text="Total de registros importados: ", font= ('Arial', '9'))
         self.lblTotal.pack(side = LEFT, expand = NO, fill = NONE )
@@ -478,6 +506,18 @@ class Tela:
         else:
             time_now_formated = time_now.strftime("%Y-%m-%d")
         return time_now_formated
+
+    def pegarIntervalo(self):
+        if self.intervaloSelecionado.get() == 0:
+            #print('0.5')
+            return 0.5
+            
+        else:
+            # random float from 1 to 99.9
+            int_num = random.choice(range(10, 30))
+            float_num = int_num/10
+            #print(float_num)
+            return float_num
 
     def iniciar(self):
         if self.validar_premissas():
