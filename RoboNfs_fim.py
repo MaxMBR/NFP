@@ -43,16 +43,16 @@ def logar():
     pass_max = tela_principal.senha.get()
     url_nfp = 'https://www.nfp.fazenda.sp.gov.br'
     chrome.get(url_nfp)
-    elemento_texto_user = WebDriverWait(chrome, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="UserName"]')))
-    elemento_texto_pass = WebDriverWait(chrome, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="Password"]')))
+    elemento_texto_user = WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="UserName"]')))
+    elemento_texto_pass = WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="Password"]')))
     elemento_texto_user.send_keys(user_max)
     elemento_texto_pass.send_keys(pass_max)
     
     options = webdriver.ChromeOptions()
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option('useAutomationExtension', False) 
-    WebDriverWait(chrome, 10).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR,"iframe[name^='a-'][src^='https://www.google.com/recaptcha/api2/anchor?']")))
-    WebDriverWait(chrome, 10).until(EC.element_to_be_clickable((By.XPATH, "//span[@id='recaptcha-anchor']"))).click()
+    WebDriverWait(chrome, 5).until(EC.frame_to_be_available_and_switch_to_it((By.CSS_SELECTOR,"iframe[name^='a-'][src^='https://www.google.com/recaptcha/api2/anchor?']")))
+    WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, "//span[@id='recaptcha-anchor']"))).click()
             
     tela_principal.inserirResult('Verifique ou resolva o Captha na tela do navegador e clique em Ok...')
     captcha_validado = messagebox.askokcancel(title = "Resolver Captcha", message = 'Resolva o Captcha na tela do navegador e clique em Ok...')
@@ -74,21 +74,27 @@ def logar():
 
 def navegar():
     acao = ActionChains(chrome)
-    elemento_ent = WebDriverWait(chrome, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="menuSuperior"]/ul/li[4]/a')))
+
+    try:
+        elemento_ent = WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="menuSuperior"]/ul/li[4]/a')))
+    except:
+        url_cad = 'https://www.nfp.fazenda.sp.gov.br/EntidadesFilantropicas/CadastroNotaEntidadeAviso.aspx'
+        chrome.get(url_cad)
+
     acao.move_to_element(elemento_ent).perform()
-    elemento_cad_cupom = WebDriverWait(chrome, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="menuSuperior:submenu:12"]/li[1]/a')))
+    elemento_cad_cupom = WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="menuSuperior:submenu:12"]/li[1]/a')))
     acao.move_to_element(elemento_cad_cupom).click().perform()
 
-    elemento_pagina_bt_ok = WebDriverWait(chrome, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="ctl00_ConteudoPagina_btnOk"]')))
+    elemento_pagina_bt_ok = WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="ctl00_ConteudoPagina_btnOk"]')))
     elemento_pagina_bt_ok.click()
     
-    elemento_caixa = Select(WebDriverWait(chrome, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="ddlEntidadeFilantropica"]'))))
+    elemento_caixa = Select(WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="ddlEntidadeFilantropica"]'))))
     cod_projeto = tela_principal.switcher_projeto()
     elemento_caixa.select_by_value(cod_projeto)
     #<option value="90107">LIGA DAS SENHORAS CATOLICAS DE SAO PAULO</option>
     #<option value="32523">PROJETO CASULO</option>
     
-    elemento_pagina_bt_nova_nf = WebDriverWait(chrome, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="ctl00_ConteudoPagina_btnNovaNota"]')))
+    elemento_pagina_bt_nova_nf = WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="ctl00_ConteudoPagina_btnNovaNota"]')))
     elemento_pagina_bt_nova_nf.click()
     time.sleep(1)
     
@@ -124,7 +130,7 @@ def lancar_notas():
                 try:
                     #elemento_num_nf = chrome.find_element(By.XPATH, '//*[contains(@title, "Digite ou Utilize")]')
                     try: 
-                        elemento_num_nf = WebDriverWait(chrome, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[contains(@title, "Digite ou Utilize")]')))
+                        elemento_num_nf = WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[contains(@title, "Digite ou Utilize")]')))
                     except: 
                         navegar()
                         print("Naveguei de novo!")
@@ -132,7 +138,7 @@ def lancar_notas():
                     elemento_num_nf.send_keys(Keys.DELETE)
                     elemento_num_nf.send_keys(str(j.Num))
                     #elemento_salva_nf = chrome.find_element(By.XPATH, '//*[@id="btnSalvarNota"]')
-                    elemento_salva_nf = WebDriverWait(chrome, 10).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="btnSalvarNota"]')))
+                    elemento_salva_nf = WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="btnSalvarNota"]')))
                     elemento_salva_nf.click()
                     aguardar = tela_principal.pegarIntervalo()
                     time.sleep(aguardar)
@@ -141,6 +147,9 @@ def lancar_notas():
                     time_now_formated = tela_principal.consultarDataHora('h')
                     logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')           
                     try:
+                        #o sleep "aguardar" logo acima já faz esse trabalho:
+                        #elemento_sucesso = chrome.find_element(By.XPATH, '//*[@id="lblInfo"]')
+                        #elemento_sucesso = WebDriverWait(chrome, 3).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="lblInfo"]')))
                         elemento_sucesso = chrome.find_element(By.XPATH, '//*[@id="lblInfo"]')
                         if 'registrada com sucesso' in elemento_sucesso.text:
                             elem_sucess_msg_sucess = time_now_formated + ' | Sucesso! | ' + 'Msg: ' + elemento_sucesso.text + ' | ' + str(j.Num)
@@ -164,19 +173,24 @@ def lancar_notas():
                             df.at[i, 'Msg']= elemento_erro.text
                             df.at[i, 'Status']= 'Falha'
                             tela_principal.inserirResult(elem_erro_msg_erro)
-                        except:
-                            elem_erro_msg_gen = time_now_formated + ' | Erro! | ' + ' Não foi possível cadastrar, erro não mapeado. | ' + str(j.Num)
+                        except: #COD EXC-1
+                            elem_erro_msg_gen = time_now_formated + ' | Erro! | ' + ' Não foi possível cadastrar, erro não mapeado. COD EXC-1 | ' + str(j.Num)
                             print(elem_erro_msg_gen, file = logExec)
                             df.at[i, 'Msg']= elem_erro_msg_gen
                             df.at[i, 'Status']= 'Falha'
                             tela_principal.inserirResult(elem_erro_msg_gen)
-                    except:
-                        print("Registro fica sem tratativa")
-                except:
+                    except: #COD EXC-2
+                        elem_erro_msg_gen = time_now_formated + ' | Erro! | ' + ' Não foi possível cadastrar, erro não mapeado. COD EXC-2 | ' + str(j.Num)
+                        print(elem_erro_msg_gen, file = logExec)
+                        df.at[i, 'Msg']= elem_erro_msg_gen
+                        df.at[i, 'Status']= 'Falha'
+                        tela_principal.inserirResult(elem_erro_msg_gen)
+                except: #COD EXC-3
                     exc_type, exc_tb = sys.exc_info()
-                    print('DEU ruim!', exc_type, exc_tb.tb_lineno)
-                    print('DEU ruim!', exc_type, exc_tb.tb_lineno, file = logExec)
-                    tela_principal.inserirResult(f'DEU ruim!, {exc_type}, {exc_tb.tb_lineno}')
+                    #print('DEU ruim!', exc_type, exc_tb.tb_lineno)
+                    print('Erro não mapeado. COD EXC-3', exc_type, exc_tb.tb_lineno, file = logExec)
+                    tela_principal.inserirResult(f'Erro não mapeado. COD EXC-3, {exc_type}, {exc_tb.tb_lineno}')
+
                     erro_fora_tela = 'Faltam registros a serem processados, execute novamente o mesmo arquivo!'
                     logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')
                     print(erro_fora_tela, file = logExec)
@@ -312,7 +326,7 @@ class Tela:
         self.lblRadioBtInteval["font"] = self.fontePadrao
         self.lblRadioBtInteval.pack()  
 
-        self.varIntervalos = [('Fixo: 0.5s', 0.5), ('Aleatório: entre 1.0 e 3.0s', self.pegarIntervalo)]
+        self.varIntervalos = [('Fixo: 0.3s', 0.3), ('Aleatório: entre 0.4 e 3.0s', self.pegarIntervalo)]
         self.intervaloSelecionado = IntVar()
         self.intervaloSelecionado.set(0)
         # Using a loop to create all alternatives in the list:
@@ -509,12 +523,12 @@ class Tela:
 
     def pegarIntervalo(self):
         if self.intervaloSelecionado.get() == 0:
-            #print('0.5')
-            return 0.5
+            #print('0.3')
+            return 0.3
             
         else:
             # random float from 1 to 99.9
-            int_num = random.choice(range(10, 30))
+            int_num = random.choice(range(4, 30))
             float_num = int_num/10
             #print(float_num)
             return float_num
