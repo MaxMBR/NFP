@@ -1,4 +1,3 @@
-from faulthandler import disable
 import pandas as pd #Para ler arquivos e transformar em dataframes
 from selenium import webdriver #O navegador - antigo
 from webdriver_manager.chrome import ChromeDriverManager #O navegador -novo
@@ -111,10 +110,13 @@ def lancar_notas():
     tela_principal.btBaixar_modelo["state"] = DISABLED
     tela_principal.btIniciar["state"] = DISABLED
 
+    time_now_formated_d = tela_principal.consultarDataHora('d')
+    logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')
+
     for i, j in df.iterrows():
         if stop:
             parou_processo = 'Você parou o processo. Faltam registros a serem processados, execute novamente o mesmo arquivo!'
-            logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')
+            #logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')
             print(parou_processo, file = logExec)
             tela_principal.inserirResult(parou_processo)
             stop = None
@@ -130,7 +132,7 @@ def lancar_notas():
                 try:
                     #elemento_num_nf = chrome.find_element(By.XPATH, '//*[contains(@title, "Digite ou Utilize")]')
                     try: 
-                        elemento_num_nf = WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[contains(@title, "Digite ou Utilize")]')))
+                        elemento_num_nf = WebDriverWait(chrome, 3).until(EC.element_to_be_clickable((By.XPATH, '//*[contains(@title, "Digite ou Utilize")]')))
                     except: 
                         navegar()
                         print("Naveguei de novo!")
@@ -138,14 +140,13 @@ def lancar_notas():
                     elemento_num_nf.send_keys(Keys.DELETE)
                     elemento_num_nf.send_keys(str(j.Num))
                     #elemento_salva_nf = chrome.find_element(By.XPATH, '//*[@id="btnSalvarNota"]')
-                    elemento_salva_nf = WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="btnSalvarNota"]')))
+                    elemento_salva_nf = WebDriverWait(chrome, 3).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="btnSalvarNota"]')))
                     elemento_salva_nf.click()
                     aguardar = tela_principal.pegarIntervalo()
                     time.sleep(aguardar)
-                    #print(aguardar)
                     time_now_formated_d = tela_principal.consultarDataHora('d')
                     time_now_formated = tela_principal.consultarDataHora('h')
-                    logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')           
+                    #logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')           
                     try:
                         #o sleep "aguardar" logo acima já faz esse trabalho:
                         #elemento_sucesso = chrome.find_element(By.XPATH, '//*[@id="lblInfo"]')
@@ -164,7 +165,7 @@ def lancar_notas():
                             df.at[i, 'Status']= 'Falha'
                             tela_principal.inserirResult(elem_sucess_msg_erro)
                     except NoSuchElementException:
-                        try:
+                        try: #COD ERR-0
                             #elemento_erro = chrome.find_element(By.XPATH, '//*[@id="lblErro"]')
                             elemento_erro = WebDriverWait(chrome, 3).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="lblErro"]')))
                             elemento_erro = chrome.find_element(By.XPATH, '//*[@id="lblErro"]')
@@ -173,18 +174,21 @@ def lancar_notas():
                             df.at[i, 'Msg']= elemento_erro.text
                             df.at[i, 'Status']= 'Falha'
                             tela_principal.inserirResult(elem_erro_msg_erro)
+                            print('#COD ERR-0')
                         except: #COD EXC-1
                             elem_erro_msg_gen = time_now_formated + ' | Erro! | ' + ' Não foi possível cadastrar, erro não mapeado. COD EXC-1 | ' + str(j.Num)
                             print(elem_erro_msg_gen, file = logExec)
                             df.at[i, 'Msg']= elem_erro_msg_gen
                             df.at[i, 'Status']= 'Falha'
                             tela_principal.inserirResult(elem_erro_msg_gen)
+                            print('#COD EXC-1')
                     except: #COD EXC-2
                         elem_erro_msg_gen = time_now_formated + ' | Erro! | ' + ' Não foi possível cadastrar, erro não mapeado. COD EXC-2 | ' + str(j.Num)
                         print(elem_erro_msg_gen, file = logExec)
                         df.at[i, 'Msg']= elem_erro_msg_gen
                         df.at[i, 'Status']= 'Falha'
                         tela_principal.inserirResult(elem_erro_msg_gen)
+                        print('#COD EXC-2')
                 except: #COD EXC-3
                     exc_type, exc_tb = sys.exc_info()
                     #print('DEU ruim!', exc_type, exc_tb.tb_lineno)
@@ -192,18 +196,21 @@ def lancar_notas():
                     tela_principal.inserirResult(f'Erro não mapeado. COD EXC-3, {exc_type}, {exc_tb.tb_lineno}')
 
                     erro_fora_tela = 'Faltam registros a serem processados, execute novamente o mesmo arquivo!'
-                    logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')
+                    #logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')
                     print(erro_fora_tela, file = logExec)
                     tela_principal.inserirResult(erro_fora_tela)
+                    print('#COD EXC-3')
                     break
-                
+    
+    logExec.close()
+
     time_now_formated_d = tela_principal.consultarDataHora('d')
     try:
         df.to_excel(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}.xlsx', index=False)
     except:
         df.to_excel(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_.xlsx', index=False)
     tela_principal.inserirResult('Fim. Resultados dos processamentos inseridos na planilha em:')
-    tela_principal.inserirResult(nome_do_arquivo)
+    tela_principal.inserirResult(dir)
     
     tela_principal.btParar["state"] = DISABLED
     tela_principal.btImportarPlan["state"] = NORMAL
