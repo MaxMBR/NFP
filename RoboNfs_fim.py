@@ -76,13 +76,13 @@ def navegar():
 
     try:
         elemento_ent = WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="menuSuperior"]/ul/li[4]/a')))
+        acao.move_to_element(elemento_ent).perform()
+        elemento_cad_cupom = WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="menuSuperior:submenu:12"]/li[1]/a')))
+        acao.move_to_element(elemento_cad_cupom).click().perform()
+
     except:
         url_cad = 'https://www.nfp.fazenda.sp.gov.br/EntidadesFilantropicas/CadastroNotaEntidadeAviso.aspx'
         chrome.get(url_cad)
-
-    acao.move_to_element(elemento_ent).perform()
-    elemento_cad_cupom = WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="menuSuperior:submenu:12"]/li[1]/a')))
-    acao.move_to_element(elemento_cad_cupom).click().perform()
 
     elemento_pagina_bt_ok = WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="ctl00_ConteudoPagina_btnOk"]')))
     elemento_pagina_bt_ok.click()
@@ -114,6 +114,7 @@ def lancar_notas():
     logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')
 
     for i, j in df.iterrows():
+        aguardar = tela_principal.pegarIntervalo() / 2
         if stop:
             parou_processo = 'Você parou o processo. Faltam registros a serem processados, execute novamente o mesmo arquivo!'
             #logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')
@@ -122,6 +123,7 @@ def lancar_notas():
             stop = None
             break
         else:
+            time.sleep(aguardar)
             t = i + 1
             msgProgresso = f'Processando registro {t} de {statusTotal}...'
             tela_principal.lblTotal['text'] = msgProgresso
@@ -140,15 +142,14 @@ def lancar_notas():
                     elemento_num_nf.send_keys(Keys.DELETE)
                     elemento_num_nf.send_keys(str(j.Num))
                     #elemento_salva_nf = chrome.find_element(By.XPATH, '//*[@id="btnSalvarNota"]')
-                    elemento_salva_nf = WebDriverWait(chrome, 3).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="btnSalvarNota"]')))
-                    elemento_salva_nf.click()
-                    aguardar = tela_principal.pegarIntervalo()
+                    elemento_salva_nf = WebDriverWait(chrome, 3).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="btnSalvarNota"]'))).click()
+                    #elemento_salva_nf.click()
                     time.sleep(aguardar)
                     time_now_formated_d = tela_principal.consultarDataHora('d')
                     time_now_formated = tela_principal.consultarDataHora('h')
                     #logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')           
                     try:
-                        #o sleep "aguardar" logo acima já faz esse trabalho:
+                        #o sleep "aguardar" logo acima já faz esse trabalho abaixo:
                         #elemento_sucesso = chrome.find_element(By.XPATH, '//*[@id="lblInfo"]')
                         #elemento_sucesso = WebDriverWait(chrome, 3).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="lblInfo"]')))
                         elemento_sucesso = chrome.find_element(By.XPATH, '//*[@id="lblInfo"]')
@@ -531,8 +532,9 @@ class Tela:
     def pegarIntervalo(self):
         if self.intervaloSelecionado.get() == 0:
             #print('0.3')
-            return 0.3
+            return 0.3 / 2
             
+
         else:
             # random float from 1 to 99.9
             int_num = random.choice(range(4, 30))
