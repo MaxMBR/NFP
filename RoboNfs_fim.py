@@ -27,6 +27,7 @@ chrome = ''
 df = '' #dataframe que sera utilizado quando importar a planilha
 nome_do_arquivo = ''
 stop = ''
+acao = ActionChains
 
 def iniciar_driver():
     global chromedrive_path
@@ -42,6 +43,7 @@ def logar():
     pass_max = tela_principal.senha.get()
     url_nfp = 'https://www.nfp.fazenda.sp.gov.br'
     chrome.get(url_nfp)
+    chrome.maximize_window()
     elemento_texto_user = WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="UserName"]')))
     elemento_texto_pass = WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="Password"]')))
     elemento_texto_user.send_keys(user_max)
@@ -72,7 +74,7 @@ def logar():
         return False
 
 def navegar():
-    acao = ActionChains(chrome)
+    #acao = ActionChains(chrome)
 
     try:
         elemento_ent = WebDriverWait(chrome, 5).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="menuSuperior"]/ul/li[4]/a')))
@@ -114,6 +116,7 @@ def lancar_notas():
     logExec = open(f'{dir}\\{time_now_formated_d}-{tela_principal.menuProjetos.get()}_log.txt', 'a')
 
     for i, j in df.iterrows():
+        #acao = ActionChains(chrome)
         aguardar = tela_principal.pegarIntervalo() / 2
         if stop:
             parou_processo = 'Você parou o processo. Faltam registros a serem processados, execute novamente o mesmo arquivo!'
@@ -141,9 +144,10 @@ def lancar_notas():
                     elemento_num_nf.send_keys(Keys.DELETE)
                     elemento_num_nf.send_keys(Keys.DELETE)
                     elemento_num_nf.send_keys(str(j.Num))
-                    #elemento_salva_nf = chrome.find_element(By.XPATH, '//*[@id="btnSalvarNota"]')
-                    elemento_salva_nf = WebDriverWait(chrome, 3).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="btnSalvarNota"]'))).click()
-                    #elemento_salva_nf.click()
+                    elemento_salva_nf = WebDriverWait(chrome, 3).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="btnSalvarNota"]')))
+                    #acao.move_to_element(elemento_salva_nf).click().perform()
+                    chrome.execute_script("arguments[0].scrollIntoView();", elemento_salva_nf)
+                    elemento_salva_nf.click()
                     time.sleep(aguardar)
                     time_now_formated_d = tela_principal.consultarDataHora('d')
                     time_now_formated = tela_principal.consultarDataHora('h')
@@ -191,7 +195,7 @@ def lancar_notas():
                         tela_principal.inserirResult(elem_erro_msg_gen)
                         print('#COD EXC-2')
                 except: #COD EXC-3
-                    exc_type, exc_tb = sys.exc_info()
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
                     #print('DEU ruim!', exc_type, exc_tb.tb_lineno)
                     print('Erro não mapeado. COD EXC-3', exc_type, exc_tb.tb_lineno, file = logExec)
                     tela_principal.inserirResult(f'Erro não mapeado. COD EXC-3, {exc_type}, {exc_tb.tb_lineno}')
