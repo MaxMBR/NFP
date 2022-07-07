@@ -141,6 +141,7 @@ def lancar_notas():
                     except: 
                         navegar()
                         print("Naveguei de novo!")
+                        elemento_num_nf = WebDriverWait(chrome, 3).until(EC.element_to_be_clickable((By.XPATH, '//*[contains(@title, "Digite ou Utilize")]')))
                     elemento_num_nf.send_keys(Keys.DELETE)
                     elemento_num_nf.send_keys(Keys.DELETE)
                     elemento_num_nf.send_keys(str(j.Num))
@@ -462,17 +463,38 @@ class Tela:
             statusTotalCru = len(df.index)
             
             listaExcluir = []
+            listaAdicionar = []
             for i, j in df.iterrows(): # i = index do dataframe, j = qualquer coluna que eu quiser
                 
                 for k, l in enumerate(j.Num): # k = index da string do valor de j, l = valor do caracter referente ao ink
                     if l.isdigit():
                         #print(i, k)
                         mid = j.Num[k:k+44]
-                        if mid.isdigit() and len(mid)==44:
+                        if mid.isdigit() and len(mid) == 44:
                             j.Num = mid
                             #print(j.Num)
                         else:
                             listaExcluir.append(i)
+
+                            if mid.isdigit() and len(mid) == 22 and mid[0:1] != '0': #validar se o código de barra esta quebrado em duas linhas
+                                if i > 0 and i < (statusTotalCru - 1):
+                                    mid2 = mid + df.at[i-1,'Num']
+                                    mid3 = mid + df.at[i+1,'Num']
+                                    
+                                    if mid2.isdigit() and len(mid2) == 44:
+                                        listaAdicionar.append(mid2)
+                                    if mid3.isdigit() and len(mid3) == 44:
+                                        listaAdicionar.append(mid3)
+                                elif i == 0:
+                                    mid3 = mid + df.at[i+1,'Num']
+                                    if mid3.isdigit() and len(mid3) == 44:
+                                        listaAdicionar.append(mid3)
+                                else:
+                                    mid2 = mid + df.at[i-1,'Num']
+                                    if mid2.isdigit() and len(mid2) == 44:
+                                        listaAdicionar.append(mid2)
+                                    
+
                             #df.drop([i], axis=0, inplace=True)
                         break
                 if mid == None:
@@ -480,10 +502,16 @@ class Tela:
                 mid = None
 
             df.drop(listaExcluir, axis=0, inplace=True)
-            df.drop_duplicates(subset=None, keep="first", inplace=True)
+            #df.drop_duplicates(subset=None, keep="first", inplace=True)
+            #df.reset_index(drop=True, inplace = True)
+            
+            df2 = pd.DataFrame(listaAdicionar, columns=['Num'])
+            df = pd.concat([df, df2], ignore_index=True)
+            
+            df.drop_duplicates(subset=['Num'], keep="first", inplace=True) #como o concat coloca NaN na coluna vazia, preciso falar que a remoção dos duplicados é com base somente na 'Num'
             df.reset_index(drop=True, inplace = True)
-
-            #df.to_excel('ddd.xlsx')
+            
+            #df.to_excel('ddd.xlsx') ##############################################################
 
             statusTotal = len(df.index)
             self.lblTotal['text'] = f'Total de registros importados: {statusTotalCru}, total de registros válidos: {statusTotal}.'
